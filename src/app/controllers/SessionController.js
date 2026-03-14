@@ -1,53 +1,58 @@
 import jwt from "jsonwebtoken";
 import * as Yup from "yup";
-import authConfig from "../../config/auth";
 import User from "../models/User";
+import bcrypt from "bcryptjs";
+import authConfig from "../../config/auth"
 
 class SessionController {
-	async store(req, res) {
+	async store(request, response) {
 		const Schema = Yup.object({
 			email: Yup.string().email().required(),
 			password: Yup.string().min(6).required(),
 		});
 
-		const isValid = await Schema.isValid(req.body);
+		const isValid = await Schema.isValid(request.body, {
+			abortEarly: false,
+			strict: true
+		});
 
-		const emailOrPasswordIncorrect = () =>
-			res
+		const emailOrPasswordIncorrect = () => {
+			return response
 				.status(401)
 				.json({ error: "Make sure your email and password are correct" });
+		}
 
 		if (!isValid) {
 			return emailOrPasswordIncorrect();
 		}
 
-		const { email, password } = req.body;
+		const { email, password } = request.body;
 
-		const user = await User.findOne({
+		const existingUser = await User.findOne({
 			where: {
 				email,
 			},
 		});
 
-		if (!user) {
+		if (!existingUser) {
 			return emailOrPasswordIncorrect();
 		}
 
-		const isSamePassword = await user.checkPassword(password);
+		const isPasswordCorrect = await bcrypt.compare(password, existingUser.password_hash);
 
-		if (!isSamePassword) {
+		if (!isPasswordCorrect) {
 			return emailOrPasswordIncorrect();
 		}
 
-		return res.status(201).json({
-			id: user.id,
-			name: user.name,
-			email,
-			admin: user.admin,
-			token: jwt.sign({ id: user.id }, authConfig.secret, {
-				expiresIn: authConfig.expiresIn,
-			}),
-		});
+		const token = jwt.sign( { id: existingUser.id, admin: existingUser.admin }, authConfig.secret, {expiresIn: authConfig.expiresIn})
+
+		return response.status(201).json({
+			id: existingUser.id,
+			name: existingUser.name,
+			email: existingUser.email,
+			admin: existingUser.admin,
+			token
+			});
 	}
 }
 

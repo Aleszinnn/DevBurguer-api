@@ -1,31 +1,35 @@
-import Sequelize, { Model } from "sequelize";
+import Sequelize, { Model } from 'sequelize';
 
 class Product extends Model {
-    static init(sequelize) {
-        // biome-ignore lint/complexity/noThisInStatic: O Sequelize exige super.init em métodos estáticos
-        super.init(
-            {
-                name: Sequelize.STRING,
-                price: Sequelize.INTEGER,
-                category: Sequelize.STRING,
-                path: Sequelize.STRING,
-                url: {
-                    type: Sequelize.VIRTUAL,
-                    get() {
-                        return `http://localhost:3001/product-file/${this.path}`;
-                    },
-                },
-            },
-            {
-                sequelize,
-                tableName: 'products',
-                underscored: true,
-            },
-        );
+  static init(sequelize) {
+    super.init(
+      {
+        name: Sequelize.STRING,
+        price: Sequelize.INTEGER,
+        path: Sequelize.STRING,
+        offer: Sequelize.BOOLEAN,
+        url: {
+          type: Sequelize.VIRTUAL,
+          get() {
+            return `http://localhost:3005/product-file/${this.path}`;
+          },
+        },
+      },
+      {
+        sequelize,
+        tableName: 'products',
+        underscored: true,
+      }
+    );
+    return this;
+  }
 
-        // biome-ignore lint/complexity/noThisInStatic: O Sequelize exige retornar a própria classe (this) no init
-        return this;
-    }
+  static associate(models) {
+    this.belongsTo(models.Category, {
+      foreignKey: 'category_id',
+      as: 'category',
+    });
+  }
 }
 
 export default Product;

@@ -15,8 +15,6 @@ class User extends Model {
       {
         sequelize,
         tableName: 'users',
-        // Se o erro persistir mesmo com a migration rodada, 
-        // adicione 'underscored: true' para garantir o mapeamento de snake_case
         underscored: true,
       }
     );
@@ -24,7 +22,7 @@ class User extends Model {
     // biome-ignore lint/complexity/noThisInStatic: Hooks do Sequelize em métodos estáticos usam 'this'
     this.addHook('beforeSave', async (user) => {
       if (user.password) {
-        user.password_hash = await bcrypt.hash(user.password, 8);
+        user.password_hash = await bcrypt.hash(user.password, 10);
       }
     });
 

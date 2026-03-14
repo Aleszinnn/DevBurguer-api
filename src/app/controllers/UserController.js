@@ -22,7 +22,7 @@ class userController {
 
 		const userExists = await User.findOne({
 			where: {
-				email,
+				email: req.body.email,
 			},
 		});
 
@@ -40,9 +40,9 @@ class userController {
 
 		return res.status(201).json({
 			id: user.id,
-			name,
-			email,
-			admin,
+			name: user.name,
+			email: user.email,
+			admin: user.admin,
 		});
 	}
 }

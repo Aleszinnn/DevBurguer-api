@@ -1,41 +1,88 @@
 import * as Yup from "yup";
 import Product from "../models/product";
+import Category from "../models/Category";
 
 class ProductController {
     async store(req, res) {
         const schema = Yup.object({
             name: Yup.string().required(),
             price: Yup.number().required(),
-            category: Yup.string().required(),
-            // path: Yup.string().required(),
+            category_id: Yup.number().required(),
+            offer: Yup.boolean()
         });
 
         try {
-            // validateSync é síncrono, então o try/catch funciona corretamente aqui
             schema.validateSync(req.body, { abortEarly: false });
         } catch (err) {
             return res.status(400).json({ error: err.errors });
         }
 
-        const { filename: path } = req.file;
-        const { name, price, category } = req.body;
+        const { filename } = req.file;
+        const { name, price, category_id, offer } = req.body;
 
         const product = await Product.create({
             name,
             price,
-            category,
-            path,
+            category_id,
+            path: filename,
+            offer
         });
 
         return res.status(201).json(product);
     }
 
-    // Alterado para _req para resolver o erro 'noUnusedFunctionParameters' do Biome
-    async index(_req, res) {
-        const products = await Product.findAll();
-        
-        // Alterado de 201 para 200 (status correto para listagem/sucesso)
-        return res.status(200).json(products);
+    async update(req, res) {
+        const schema = Yup.object({
+            name: Yup.string(),
+            price: Yup.number(),
+            category_id: Yup.number(),
+            offer: Yup.boolean(),
+        })
+
+        try {
+            schema.validateSync(req.body, { abortEarly: false });
+        } catch (err) {
+            return res.status(400).json({ error: err.errors });
+        }
+
+        const { name, price, category_id, offer } = req.body;
+        const { id } = req.params;
+
+        let path 
+        if(req.file){
+        const { filename} = req.file;
+        path: filename; 
+
+        }
+
+
+        const updateProduct = await Product.create({
+            name,
+            price,
+            category_id,
+            path,
+            offer
+        }, {
+            where: {
+                id,
+            },
+        });
+
+        return res.status(201).json(updateProduct);
+
+    }
+
+    async index(_request, response) {
+        const Products = await Product.findAll({
+            include: {
+                model: Category,
+                as: "category",
+                attributes: ["id", "name"],
+
+            }
+        });
+
+        return response.status(201).json(Products);
     }
 }
 

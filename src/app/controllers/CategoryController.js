@@ -8,25 +8,36 @@ class CategoryController {
         });
 
         try {
-            // Adicionado await, pois validate é assíncrono
             await schema.validate(req.body, { abortEarly: false });
         } catch (err) {
             return res.status(400).json({ error: err.errors });
         }
 
-        const { name } = req.body;
+        if (!req.file) {
+            return res.status(400).json({ error: "Image file is required" });
+        }
 
-        const category = await Category.create({
-            name,
+        const { name } = req.body;
+        const { filename: path } = req.file;
+
+        const categoryExists = await Category.findOne({
+            where: { name },
         });
 
-        return res.status(201).json(category);
+        if (categoryExists) {
+            return res.status(400).json({ error: "Category already exists" });
+        }
+
+        const newCategory = await Category.create({
+            name,
+            path,
+        });
+
+        return res.status(201).json(newCategory);
     }
 
-    // Alterado para _req para resolver o erro do linter (parâmetro não utilizado)
     async index(_req, res) {
         const categories = await Category.findAll();
-
         return res.json(categories);
     }
 }
